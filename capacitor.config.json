@@ -1,0 +1,19 @@
+{
+  "appId": "com.velismo.eisner",
+  "appName": "Eisner",
+  "webDir": "web",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  },
+  "plugins": {
+    "Filesystem": {
+      "androidExtraFilesystems": ["documents", "data", "cache"]
+    }
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

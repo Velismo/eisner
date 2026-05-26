@@ -1,0 +1,33 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace "com.velismo.eisner"
+    compileSdk 34
+    defaultConfig {
+        applicationId "com.velismo.eisner"
+        minSdk 23
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+        debug {
+            debuggable true
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation project(':capacitor-android')
+    // Native RAR support via junrar
+    implementation 'com.github.junrar:junrar:7.5.5'
+    // File picker
+    implementation 'com.github.capawesome-team:capacitor-file-picker:0.6.1'
+}
