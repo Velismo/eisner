@@ -3,12 +3,14 @@ name: Build Eisner APK
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:  # allows manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: write
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -36,78 +38,78 @@ jobs:
     - name: Sync web assets to Android
       run: npx cap sync android
 
-    - name: Debug - show generated files
+    - name: Set app name and fix config
       run: |
-        echo "=== ROOT build.gradle ==="
-        cat android/build.gradle
-        echo ""
-        echo "=== APP build.gradle ==="
-        cat android/app/build.gradle
-        echo ""
-        echo "=== settings.gradle ==="
-        cat android/settings.gradle
-        echo ""
-        echo "=== gradle-wrapper.properties ==="
-        cat android/gradle/wrapper/gradle-wrapper.properties  
+        # Fix app name to "Eisner"
+        sed -i 's/<string name=\"app_name\">.*<\/string>/<string name=\"app_name\">Eisner<\/string>/' android/app/src/main/res/values/strings.xml
+        cat android/app/src/main/res/values/strings.xml
 
-    - name: Fix Gradle version and config
-      run: |
         # Fix Gradle version
         sed -i 's/gradle-8.0.2-all/gradle-8.2-all/g' android/gradle/wrapper/gradle-wrapper.properties
         sed -i 's/gradle-8.0-all/gradle-8.2-all/g' android/gradle/wrapper/gradle-wrapper.properties
-        
-        # Add junrar dependency to app/build.gradle (only app level, not root)
-        sed -i '/dependencies {/a\    implementation "com.github.junrar:junrar:7.5.5"' android/app/build.gradle
-        
-        # Add jitpack repo to settings.gradle or build.gradle
-        if [ -f android/settings.gradle ]; then
-          sed -i '/repositories {/a\        maven { url "https://jitpack.io" }' android/settings.gradle
-        fi
-        
-        echo "=== app/build.gradle ===" 
-        cat android/app/build.gradle
+        sed -i 's/gradle-8.1-all/gradle-8.2-all/g' android/gradle/wrapper/gradle-wrapper.properties
+
+        # Add junrar dependency
+        sed -i '/dependencies {/a\    implementation \"com.github.junrar:junrar:7.5.5\"' android/app/build.gradle || true
+
+        # Set targetSdk to 34 if below
+        sed -i 's/targetSdk [0-9]*/targetSdk 34/' android/app/build.gradle || true
+
+    - name: Inject Eisner icons
+      run: |
+        mkdir -p android/app/src/main/res/mipmap-mdpi
+        echo 'iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAfklEQVR42u3Zyw2AIBAFQM5YmJXbi11oBwaNfBbmJRxJ3lw2gU1JpF1y3q5WJ2TpXzEjFP8MGbH8K0RowMjlixAAPQERyj8iSi+fx17tAAAAdAKEn0IAAKsDak0bAAAAUwgAAMCDBgBgMoDvRZ+7MwOsmCz6Jly3rr2pl8q5AR6zSC6qUkg9AAAAAElFTkSuQmCC' | base64 -d > android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+        cp android/app/src/main/res/mipmap-mdpi/ic_launcher.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+        mkdir -p android/app/src/main/res/mipmap-hdpi
+        echo 'iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAAqklEQVR42u3c0Q2AIAxAQb5xMCd3F7eQGawkSHsvYYH7AqW0JknKV+/Hs9uCshIrE850pIw405Ay43xGqoATRqqEE0ICBCgOVBHnFRIgQGuA7uv8zQIECBAgQIAAAQK0EZCdNCBAgAABqv25AxAgQIAAAQIECJCdtKMGIECAAAHyVwMQIECAAAECBAiQe9IukgMy0GIcChAgM6uQjIZ7XMDzFB46yYciSZMbwY2Su/acuVUAAAAASUVORK5CYII=' | base64 -d > android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+        cp android/app/src/main/res/mipmap-hdpi/ic_launcher.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+        mkdir -p android/app/src/main/res/mipmap-xhdpi
+        echo 'iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAA9UlEQVR42u3dwQ2AMAwEQb9DYVROL3QBTSCdceakNLDzAqFQZWZmZmYfba3jmXoEByJ8HELwIITIQQRxgwiiBhHEDCMIGQQQMYwgYBBAvDCCcAAAOCEA0cIIgg0CuK/ztwcAAAAAAAAAAAAAAAAAAAAAMBrAuyAAAAAAAAAAAAAAAAAAGPQkDAAAAAAAAAAAAAAAAAAAAAAA4F0QAAAAAAAAAAAAAAAAAPg62ufpAAAAAAAAAAAAAAAAAAAAgDvjvAtyXF3p4lYHAADHFfZ+4OD4jcku8QE0AIAQjg+hQXwIDeJDaBAfRIPwIJqE3xGkzMzMbMZeqrvLDHhRXtcAAAAASUVORK5CYII=' | base64 -d > android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+        cp android/app/src/main/res/mipmap-xhdpi/ic_launcher.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+        mkdir -p android/app/src/main/res/mipmap-xxhdpi
+        echo 'iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAYAAADnRuK4AAABp0lEQVR42u3asQ2AMAxFwdRhMCZnF7YIEyBRRDiO70tvAXNdaM3MzMzMzMzMzMxs5fV+DM0JGAEFDUzggASPkiLygUCCByJ4lAiRjwARPBrwKBciBwcIHv2PyJEhAkgxgBwXIoAEkBICclSIABJAAkjVADkmRAAJIAH0qfs69RJAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEkAACCCCAAAIIIIAWPrI/EgESQAABBBBAAAEEkAASQAABBBBAAAEEkAACCCCAAPIaXwwzQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQSQPxIFkAACCCCAAAIIIIAEEEAAAQQQQAABJIAAAggggAACyGu8132AAAIIIIAAAggggAACCCABBBBAAAEEEEAACSCAAAIIIIAAAggggAACCCCAlgQkfyQKIIA0CRBE8AAkgASQqgKCCB6ABJASA4IIHoAUCwgieCBSLB6AAIJIsXggggcixeOBCB6I4AFJG8CBCB6QwIFJG6EBChgzMzMzMzMzM8u/B0hQP1bdHp8FAAAAAElFTkSuQmCC' | base64 -d > android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+        cp android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+        mkdir -p android/app/src/main/res/mipmap-xxxhdpi
+        echo 'iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAACnklEQVR42u3cwY2EMBQFQZ8hMCInF7KAJJCR6XpSJ4B/7W12DDMzMzMzMzMzMzMzMzMzMzMzs0nbtv3WmrleBy8gHL1gcPSCwfErjcBDKwnBwyoLwWMqi8AjKovA4ymLwKMpi8BjKYvAIymLwOMoi8CjKI3AgygLwGMojcBDKAvAIyiLwMdXGoEPLwCkIgAfXWkEPrgAkIoAfGylEfjQAkACQIoB8JGVRuADCwAJAAkACYCvu85DHwUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMB+AfzHi36IAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAA/CSy9zNFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADA0QMAgAAAwCEJAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBMAAAgAP4nUQn8kABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABIAEgASABIAEg/RoABEofPwACwIcWAFIUAARKHz8AAsAHVxkABEofPwACwIdXGQAESh8/BMofPwDKA4BA6eMHQHkAECh9/BAof/wQKH/8ECh//BAof/wQKH/8ECh//BAof/wgKH/4IMjhQyDHD4McPQyO3oBw8GZmZmZmZmZmZmZmZmZmZmb22h6te/m6QnsQVwAAAABJRU5ErkJggg==' | base64 -d > android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+        cp android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
 
     - name: Make gradlew executable
       run: chmod +x android/gradlew
-
-    - name: Fix Gradle version
-      run: |
-        sed -i 's/gradle-8.0.2-all/gradle-8.2-all/g' android/gradle/wrapper/gradle-wrapper.properties
-        sed -i 's/gradle-8.0-all/gradle-8.2-all/g' android/gradle/wrapper/gradle-wrapper.properties
-        cat android/gradle/wrapper/gradle-wrapper.properties  
 
     - name: Build debug APK
       run: |
         cd android
         ./gradlew assembleDebug
 
+    - name: Rename APK
+      run: |
+        cp android/app/build/outputs/apk/debug/app-debug.apk eisner.apk
+        echo "APK ready: $(du -h eisner.apk)"
+
     - name: Upload APK as artifact
       uses: actions/upload-artifact@v4
       with:
-        name: eisner-debug
-        path: android/app/build/outputs/apk/debug/app-debug.apk
-        retention-days: 30
+        name: eisner
+        path: eisner.apk
+        retention-days: 90
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
-      if: github.ref == 'refs/heads/main'
       with:
         tag_name: v${{ github.run_number }}
         name: "Eisner v${{ github.run_number }}"
         body: |
           ## Eisner Comic Reader
-          
+
           ### Instalar en Android:
-          1. Descarga `eisner.apk`
+          1. Descarga **eisner.apk**
           2. Abre el archivo en tu móvil
           3. Permite "Instalar de fuentes desconocidas" si te lo pide
           4. ¡Listo!
-          
-          ### Novedades:
-          - Soporte nativo CBR/RAR
-          - Acceso completo al sistema de archivos
-          - Guided View con detección de viñetas
-        files: android/app/build/outputs/apk/debug/app-debug.apk
+
+          ### Formatos soportados:
+          CBZ · CBR · RAR · ZIP · PDF
+        files: eisner.apk
         draft: false
         prerelease: false
       env:
