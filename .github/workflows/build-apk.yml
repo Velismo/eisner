@@ -36,6 +36,20 @@ jobs:
     - name: Sync web assets to Android
       run: npx cap sync android
 
+    - name: Debug - show generated files
+      run: |
+        echo "=== ROOT build.gradle ==="
+        cat android/build.gradle
+        echo ""
+        echo "=== APP build.gradle ==="
+        cat android/app/build.gradle
+        echo ""
+        echo "=== settings.gradle ==="
+        cat android/settings.gradle
+        echo ""
+        echo "=== gradle-wrapper.properties ==="
+        cat android/gradle/wrapper/gradle-wrapper.properties  
+
     - name: Fix Gradle version and config
       run: |
         # Fix Gradle version
