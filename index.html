@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eisner — Comic Reader</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0a0b; --surface:#111114; --surface2:#18181d; --border:#2a2a32;
+  --accent:#e8c547; --text:#e8e6e0; --text-muted:#5a5a6a;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
+
+body {
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;min-height:100vh;padding:40px 20px;
+  position:relative;overflow-x:hidden;
+}
+body::before {
+  content:'';position:fixed;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 50%,rgba(232,197,71,0.07) 0%,transparent 70%),
+    repeating-linear-gradient(0deg,transparent 39px,rgba(255,255,255,0.015) 40px),
+    repeating-linear-gradient(90deg,transparent 39px,rgba(255,255,255,0.015) 40px);
+}
+
+.container {
+  max-width:560px;width:100%;text-align:center;position:relative;z-index:1;
+}
+
+/* Logo */
+.logo {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(80px,18vw,140px);
+  letter-spacing:0.04em;line-height:0.9;
+  margin-bottom:8px;
+}
+.logo span{color:var(--accent)}
+.tagline {
+  font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.25em;
+  color:var(--text-muted);text-transform:uppercase;margin-bottom:56px;
+}
+
+/* Formats */
+.formats {
+  display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:48px;
+}
+.fmt {
+  font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;
+  padding:5px 12px;border:1px solid var(--border);border-radius:4px;color:var(--text-muted);
+}
+.fmt.hi{border-color:rgba(232,197,71,0.5);color:var(--accent);}
+
+/* Download button */
+.dl-btn {
+  display:inline-flex;align-items:center;gap:12px;
+  background:var(--accent);color:#0a0a0b;
+  padding:18px 40px;border-radius:8px;
+  font-family:'DM Sans',sans-serif;font-size:16px;font-weight:700;
+  text-decoration:none;letter-spacing:0.02em;
+  transition:all 0.2s ease;
+  box-shadow:0 8px 32px rgba(232,197,71,0.25);
+  margin-bottom:16px;
+}
+.dl-btn:hover{background:#f0d060;transform:translateY(-2px);box-shadow:0 12px 40px rgba(232,197,71,0.35);}
+.dl-btn:active{transform:translateY(0);}
+.dl-btn svg{flex-shrink:0;}
+
+.dl-hint {
+  font-size:12px;color:var(--text-muted);margin-bottom:48px;line-height:1.6;
+}
+.dl-hint a{color:var(--accent);text-decoration:none;}
+
+/* Features */
+.features {
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;
+  margin-bottom:48px;text-align:left;
+}
+@media(max-width:400px){.features{grid-template-columns:1fr;}}
+.feat {
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:16px;
+}
+.feat-icon{font-size:20px;margin-bottom:8px;}
+.feat-title{font-size:13px;font-weight:500;margin-bottom:4px;}
+.feat-desc{font-size:11px;color:var(--text-muted);line-height:1.5;}
+
+/* Install steps */
+.steps {
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:24px;text-align:left;margin-bottom:48px;
+}
+.steps-title{
+  font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.15em;
+  text-transform:uppercase;color:var(--text-muted);margin-bottom:16px;
+}
+.step{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;}
+.step:last-child{margin-bottom:0;}
+.step-num{
+  width:22px;height:22px;min-width:22px;border-radius:50%;
+  background:var(--accent);color:#0a0a0b;
+  font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;
+  margin-top:1px;
+}
+.step-text{font-size:13px;color:var(--text-muted);line-height:1.5;}
+.step-text strong{color:var(--text);}
+
+/* Footer */
+footer {
+  font-size:11px;color:var(--text-muted);line-height:1.8;
+}
+footer a{color:var(--text-muted);text-decoration:none;border-bottom:1px solid var(--border);}
+footer a:hover{color:var(--accent);}
+.will{
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;
+  color:var(--text-muted);margin-top:24px;opacity:0.5;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="logo">Eis<span>ner</span></div>
+  <div class="tagline">El lector que Will hubiera querido</div>
+
+  <div class="formats">
+    <span class="fmt hi">CBZ ✓</span>
+    <span class="fmt hi">CBR ✓</span>
+    <span class="fmt hi">RAR ✓</span>
+    <span class="fmt hi">ZIP ✓</span>
+    <span class="fmt hi">PDF ✓</span>
+  </div>
+
+  <a class="dl-btn" id="dl-btn" href="https://github.com/velismo/eisner/releases/latest/download/app-debug.apk">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+    Descargar para Android
+  </a>
+
+  <div class="dl-hint">
+    APK gratuito · Sin Play Store · Android 6.0+<br>
+    También disponible en <a href="https://github.com/velismo/eisner/releases" target="_blank">todas las versiones →</a>
+  </div>
+
+  <div class="features">
+    <div class="feat">
+      <div class="feat-icon">📖</div>
+      <div class="feat-title">Guided View</div>
+      <div class="feat-desc">Detección automática de viñetas con visión por computadora</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">📁</div>
+      <div class="feat-title">Todos los formatos</div>
+      <div class="feat-desc">CBZ, CBR, RAR, ZIP y PDF sin conversiones</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">👆</div>
+      <div class="feat-title">Táctil nativo</div>
+      <div class="feat-desc">Zonas de toque, pinch zoom y deslizamiento</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🔓</div>
+      <div class="feat-title">Open source</div>
+      <div class="feat-desc">100% gratuito, sin anuncios, sin rastreo</div>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="steps-title">Cómo instalar</div>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-text">Pulsa <strong>Descargar para Android</strong> y espera a que se descargue el APK</div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-text">Abre el archivo descargado desde las notificaciones o la carpeta <strong>Descargas</strong></div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-text">Si Android pide permiso para <strong>"instalar apps de fuentes desconocidas"</strong>, acéptalo</div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-text">¡Listo! Abre <strong>Eisner</strong> desde tu pantalla de inicio</div>
+    </div>
+  </div>
+
+  <footer>
+    <a href="https://github.com/velismo/eisner" target="_blank">Código fuente en GitHub</a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/velismo/eisner/releases" target="_blank">Versiones anteriores</a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/velismo/eisner/issues" target="_blank">Reportar un error</a>
+  </footer>
+
+  <div class="will">En homenaje a Will Eisner (1917–2005)</div>
+
+</div>
+</body>
+</html>
