@@ -44,6 +44,12 @@ jobs:
     - name: Make gradlew executable
       run: chmod +x android/gradlew
 
+    - name: Fix Gradle version
+      run: |
+        sed -i 's/gradle-8.0.2-all/gradle-8.2-all/g' android/gradle/wrapper/gradle-wrapper.properties
+        sed -i 's/gradle-8.0-all/gradle-8.2-all/g' android/gradle/wrapper/gradle-wrapper.properties
+        cat android/gradle/wrapper/gradle-wrapper.properties  
+
     - name: Build debug APK
       run: |
         cd android
