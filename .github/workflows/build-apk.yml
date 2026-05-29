@@ -38,40 +38,153 @@ jobs:
     - name: Sync web assets to Android
       run: npx cap sync android
 
-    - name: Set app name and fix config
+    - name: Fix Gradle and app config
       run: |
-        # Fix app name to "Eisner"
-        sed -i 's/<string name=\"app_name\">.*<\/string>/<string name=\"app_name\">Eisner<\/string>/' android/app/src/main/res/values/strings.xml
-        cat android/app/src/main/res/values/strings.xml
-
         # Fix Gradle version
-        sed -i 's/gradle-8.0.2-all/gradle-8.2-all/g' android/gradle/wrapper/gradle-wrapper.properties
-        sed -i 's/gradle-8.0-all/gradle-8.2-all/g' android/gradle/wrapper/gradle-wrapper.properties
-        sed -i 's/gradle-8.1-all/gradle-8.2-all/g' android/gradle/wrapper/gradle-wrapper.properties
+        sed -i 's/gradle-8\.0\.[0-9]-all/gradle-8.2-all/g' android/gradle/wrapper/gradle-wrapper.properties
+        sed -i 's/gradle-8\.1\.[0-9]-all/gradle-8.2-all/g' android/gradle/wrapper/gradle-wrapper.properties
 
-        # Add junrar dependency
-        sed -i '/dependencies {/a\    implementation \"com.github.junrar:junrar:7.5.5\"' android/app/build.gradle || true
+        # Fix app name
+        sed -i 's|<string name="app_name">.*</string>|<string name="app_name">Eisner</string>|' android/app/src/main/res/values/strings.xml
 
-        # Set targetSdk to 34 if below
-        sed -i 's/targetSdk [0-9]*/targetSdk 34/' android/app/build.gradle || true
+        # Add jitpack + junrar dependency
+        sed -i '/allprojects {/,/^}/{ /repositories {/a\        maven { url "https://jitpack.io" } }; }' android/build.gradle || true
+        echo '' >> android/app/build.gradle
+        echo 'dependencies { implementation "com.github.junrar:junrar:7.5.5" }' >> android/app/build.gradle || true
 
     - name: Inject Eisner icons
       run: |
         mkdir -p android/app/src/main/res/mipmap-mdpi
-        echo 'iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAfklEQVR42u3Zyw2AIBAFQM5YmJXbi11oBwaNfBbmJRxJ3lw2gU1JpF1y3q5WJ2TpXzEjFP8MGbH8K0RowMjlixAAPQERyj8iSi+fx17tAAAAdAKEn0IAAKsDak0bAAAAUwgAAMCDBgBgMoDvRZ+7MwOsmCz6Jly3rr2pl8q5AR6zSC6qUkg9AAAAAElFTkSuQmCC' | base64 -d > android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+        printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAfklEQVR42u3Zyw2AIBAFQM5YmJXbi11oBwaNfBbmJRxJ3lw2gU1JpF1y3q5WJ2TpXzEjFP8MGbH8K0RowMjlixAAPQERyj8iSi+fx17tAAAAdAKEn0IAAKsDak0bAAAAUwgAAMCDBgBgMoDvRZ+7MwOsmCz6Jly3rr2pl8q5AR6zSC6qUkg9AAAAAElFTkSuQmCC' | base64 -d > android/app/src/main/res/mipmap-mdpi/ic_launcher.png
         cp android/app/src/main/res/mipmap-mdpi/ic_launcher.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
         mkdir -p android/app/src/main/res/mipmap-hdpi
-        echo 'iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAAqklEQVR42u3c0Q2AIAxAQb5xMCd3F7eQGawkSHsvYYH7AqW0JknKV+/Hs9uCshIrE850pIw405Ay43xGqoATRqqEE0ICBCgOVBHnFRIgQGuA7uv8zQIECBAgQIAAAQK0EZCdNCBAgAABqv25AxAgQIAAAQIECJCdtKMGIECAAAHyVwMQIECAAAECBAiQe9IukgMy0GIcChAgM6uQjIZ7XMDzFB46yYciSZMbwY2Su/acuVUAAAAASUVORK5CYII=' | base64 -d > android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+        printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAAqklEQVR42u3c0Q2AIAxAQb5xMCd3F7eQGawkSHsvYYH7AqW0JknKV+/Hs9uCshIrE850pIw405Ay43xGqoATRqqEE0ICBCgOVBHnFRIgQGuA7uv8zQIECBAgQIAAAQK0EZCdNCBAgAABqv25AxAgQIAAAQIECJCdtKMGIECAAAHyVwMQIECAAAECBAiQe9IukgMy0GIcChAgM6uQjIZ7XMDzFB46yYciSZMbwY2Su/acuVUAAAAASUVORK5CYII=' | base64 -d > android/app/src/main/res/mipmap-hdpi/ic_launcher.png
         cp android/app/src/main/res/mipmap-hdpi/ic_launcher.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
         mkdir -p android/app/src/main/res/mipmap-xhdpi
-        echo 'iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAA9UlEQVR42u3dwQ2AMAwEQb9DYVROL3QBTSCdceakNLDzAqFQZWZmZmYfba3jmXoEByJ8HELwIITIQQRxgwiiBhHEDCMIGQQQMYwgYBBAvDCCcAAAOCEA0cIIgg0CuK/ztwcAAAAAAAAAAAAAAAAAAAAAMBrAuyAAAAAAAAAAAAAAAAAAGPQkDAAAAAAAAAAAAAAAAAAAAAAA4F0QAAAAAAAAAAAAAAAAAPg62ufpAAAAAAAAAAAAAAAAAAAAgDvjvAtyXF3p4lYHAADHFfZ+4OD4jcku8QE0AIAQjg+hQXwIDeJDaBAfRIPwIJqE3xGkzMzMbMZeqrvLDHhRXtcAAAAASUVORK5CYII=' | base64 -d > android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+        printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAA9UlEQVR42u3dwQ2AMAwEQb9DYVROL3QBTSCdceakNLDzAqFQZWZmZmYfba3jmXoEByJ8HELwIITIQQRxgwiiBhHEDCMIGQQQMYwgYBBAvDCCcAAAOCEA0cIIgg0CuK/ztwcAAAAAAAAAAAAAAAAAAAAAMBrAuyAAAAAAAAAAAAAAAAAAGPQkDAAAAAAAAAAAAAAAAAAAAAAA4F0QAAAAAAAAAAAAAAAAAPg62ufpAAAAAAAAAAAAAAAAAAAAgDvjvAtyXF3p4lYHAADHFfZ+4OD4jcku8QE0AIAQjg+hQXwIDeJDaBAfRIPwIJqE3xGkzMzMbMZeqrvLDHhRXtcAAAAASUVORK5CYII=' | base64 -d > android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
         cp android/app/src/main/res/mipmap-xhdpi/ic_launcher.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
         mkdir -p android/app/src/main/res/mipmap-xxhdpi
-        echo 'iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAYAAADnRuK4AAABp0lEQVR42u3asQ2AMAxFwdRhMCZnF7YIEyBRRDiO70tvAXNdaM3MzMzMzMzMzMxs5fV+DM0JGAEFDUzggASPkiLygUCCByJ4lAiRjwARPBrwKBciBwcIHv2PyJEhAkgxgBwXIoAEkBICclSIABJAAkjVADkmRAAJIAH0qfs69RJAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEkAACCCCAAAIIIIAWPrI/EgESQAABBBBAAAEEkAASQAABBBBAAAEEkAACCCCAAPIaXwwzQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQSQPxIFkAACCCCAAAIIIIAEEEAAAQQQQAABJIAAAggggAACyGu8132AAAIIIIAAAggggAACCCABBBBAAAEEEEAACSCAAAIIIIAAAggggAACCCCAlgQkfyQKIIA0CRBE8AAkgASQqgKCCB6ABJASA4IIHoAUCwgieCBSLB6AAIJIsXggggcixeOBCB6I4AFJG8CBCB6QwIFJG6EBChgzMzMzMzMzM8u/B0hQP1bdHp8FAAAAAElFTkSuQmCC' | base64 -d > android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+        printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAYAAADnRuK4AAABp0lEQVR42u3asQ2AMAxFwdRhMCZnF7YIEyBRRDiO70tvAXNdaM3MzMzMzMzMzMxs5fV+DM0JGAEFDUzggASPkiLygUCCByJ4lAiRjwARPBrwKBciBwcIHv2PyJEhAkgxgBwXIoAEkBICclSIABJAAkjVADkmRAAJIAH0qfs69RJAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEkAACCCCAAAIIIIAWPrI/EgESQAABBBBAAAEEkAASQAABBBBAAAEEkAACCCCAAPIaXwwzQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQSQPxIFkAACCCCAAAIIIIAEEEAAAQQQQAABJIAAAggggAACyGu8132AAAIIIIAAAggggAACCCABBBBAAAEEEEAACSCAAAIIIIAAAggggAACCCCAlgQkfyQKIIA0CRBE8AAkgASQqgKCCB6ABJASA4IIHoAUCwgieCBSLB6AAIJIsXggggcixeOBCB6I4AFJG8CBCB6QwIFJG6EBChgzMzMzMzMzM8u/B0hQP1bdHp8FAAAAAElFTkSuQmCC' | base64 -d > android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
         cp android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
         mkdir -p android/app/src/main/res/mipmap-xxxhdpi
-        echo 'iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAACnklEQVR42u3cwY2EMBQFQZ8hMCInF7KAJJCR6XpSJ4B/7W12DDMzMzMzMzMzMzMzMzMzMzMzs0nbtv3WmrleBy8gHL1gcPSCwfErjcBDKwnBwyoLwWMqi8AjKovA4ymLwKMpi8BjKYvAIymLwOMoi8CjKI3AgygLwGMojcBDKAvAIyiLwMdXGoEPLwCkIgAfXWkEPrgAkIoAfGylEfjQAkACQIoB8JGVRuADCwAJAAkACYCvu85DHwUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMB+AfzHi36IAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAA/CSy9zNFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADA0QMAgAAAwCEJAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBMAAAgAP4nUQn8kABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABIAEgASABIAEg/RoABEofPwACwIcWAFIUAARKHz8AAsAHVxkABEofPwACwIdXGQAESh8/BMofPwDKA4BA6eMHQHkAECh9/BAof/wQKH/8ECh//BAof/wQKH/8ECh//BAof/wgKH/4IMjhQyDHD4McPQyO3oBw8GZmZmZmZmZmZmZmZmZmZmb22h6te/m6QnsQVwAAAABJRU5ErkJggg==' | base64 -d > android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+        printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAACnklEQVR42u3cwY2EMBQFQZ8hMCInF7KAJJCR6XpSJ4B/7W12DDMzMzMzMzMzMzMzMzMzMzMzs0nbtv3WmrleBy8gHL1gcPSCwfErjcBDKwnBwyoLwWMqi8AjKovA4ymLwKMpi8BjKYvAIymLwOMoi8CjKI3AgygLwGMojcBDKAvAIyiLwMdXGoEPLwCkIgAfXWkEPrgAkIoAfGylEfjQAkACQIoB8JGVRuADCwAJAAkACYCvu85DHwUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMB+AfzHi36IAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAA/CSy9zNFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADA0QMAgAAAwCEJAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBMAAAgAP4nUQn8kABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABIAEgASABIAEg/RoABEofPwACwIcWAFIUAARKHz8AAsAHVxkABEofPwACwIdXGQAESh8/BMofPwDKA4BA6eMHQHkAECh9/BAof/wQKH/8ECh//BAof/wQKH/8ECh//BAof/wgKH/4IMjhQyDHD4McPQyO3oBw8GZmZmZmZmZmZmZmZmZmZmb22h6te/m6QnsQVwAAAABJRU5ErkJggg==' | base64 -d > android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
         cp android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+
+    - name: Add native RAR plugin
+      run: |
+        # Create plugin directory
+        mkdir -p android/app/src/main/java/com/velismo/eisner/plugins
+
+        # Write RarPlugin.java
+        cat > android/app/src/main/java/com/velismo/eisner/plugins/RarPlugin.java << 'JAVAEOF'
+package com.velismo.eisner.plugins;
+
+import android.util.Base64;
+import com.getcapacitor.JSArray;
+import com.getcapacitor.JSObject;
+import com.getcapacitor.Plugin;
+import com.getcapacitor.PluginCall;
+import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.CapacitorPlugin;
+import com.github.junrar.Archive;
+import com.github.junrar.rarfile.FileHeader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
+
+@CapacitorPlugin(name = "RarPlugin")
+public class RarPlugin extends Plugin {
+
+    private static final List<String> IMAGE_EXTS = Arrays.asList(
+        "jpg", "jpeg", "png", "webp", "gif", "bmp"
+    );
+
+    @PluginMethod
+    public void extractImages(PluginCall call) {
+        String filePath = call.getString("path");
+        if (filePath == null) {
+            call.reject("No path provided");
+            return;
+        }
+
+        try {
+            File rarFile = new File(filePath);
+            if (!rarFile.exists()) {
+                call.reject("File not found: " + filePath);
+                return;
+            }
+
+            Archive archive = new Archive(rarFile);
+            List<FileHeader> headers = archive.getFileHeaders();
+
+            // Filter and sort image files
+            List<FileHeader> imageHeaders = new ArrayList<>();
+            for (FileHeader h : headers) {
+                if (!h.isDirectory()) {
+                    String name = h.getFileName().toLowerCase();
+                    String ext = name.contains(".") ? 
+                        name.substring(name.lastIndexOf('.') + 1) : "";
+                    if (IMAGE_EXTS.contains(ext)) {
+                        imageHeaders.add(h);
+                    }
+                }
+            }
+
+            // Sort by filename numerically
+            imageHeaders.sort((a, b) -> {
+                String na = a.getFileName().replaceAll("[^0-9]", "");
+                String nb = b.getFileName().replaceAll("[^0-9]", "");
+                if (!na.isEmpty() && !nb.isEmpty()) {
+                    try {
+                        return Integer.parseInt(na) - Integer.parseInt(nb);
+                    } catch (NumberFormatException e) { /* fall through */ }
+                }
+                return a.getFileName().compareTo(b.getFileName());
+            });
+
+            JSArray pages = new JSArray();
+            for (FileHeader h : imageHeaders) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                archive.extractFile(h, baos);
+                byte[] data = baos.toByteArray();
+                String b64 = Base64.encodeToString(data, Base64.NO_WRAP);
+                String name = h.getFileName();
+                String ext = name.contains(".") ?
+                    name.substring(name.lastIndexOf('.') + 1).toLowerCase() : "jpg";
+                String mime = ext.equals("png") ? "image/png" :
+                              ext.equals("webp") ? "image/webp" : "image/jpeg";
+
+                JSObject page = new JSObject();
+                page.put("name", name);
+                page.put("data", b64);
+                page.put("mime", mime);
+                pages.put(page);
+            }
+
+            archive.close();
+
+            JSObject result = new JSObject();
+            result.put("pages", pages);
+            result.put("count", imageHeaders.size());
+            call.resolve(result);
+
+        } catch (Exception e) {
+            call.reject("RAR extraction failed: " + e.getMessage(), e);
+        }
+    }
+}
+
+JAVAEOF
+
+        # Register plugin in MainActivity
+        MAIN=$(find android/app/src/main/java -name "MainActivity.java" | head -1)
+        echo "MainActivity: $MAIN"
+        sed -i 's/import com.getcapacitor.BridgeActivity;/import com.getcapacitor.BridgeActivity;\nimport com.velismo.eisner.plugins.RarPlugin;/' "$MAIN"
+        sed -i 's/public class MainActivity extends BridgeActivity {/public class MainActivity extends BridgeActivity {\n  @Override\n  public void onCreate(android.os.Bundle savedInstanceState) {\n    registerPlugin(RarPlugin.class);\n    super.onCreate(savedInstanceState);\n  }/' "$MAIN" || true
+        cat "$MAIN"
 
     - name: Make gradlew executable
       run: chmod +x android/gradlew
@@ -79,14 +192,14 @@ jobs:
     - name: Build debug APK
       run: |
         cd android
-        ./gradlew assembleDebug
+        ./gradlew assembleDebug --stacktrace 2>&1 | tail -50
 
     - name: Rename APK
       run: |
         cp android/app/build/outputs/apk/debug/app-debug.apk eisner.apk
-        echo "APK ready: $(du -h eisner.apk)"
+        echo "APK: $(du -h eisner.apk)"
 
-    - name: Upload APK as artifact
+    - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: eisner
@@ -101,16 +214,9 @@ jobs:
         body: |
           ## Eisner Comic Reader
 
-          ### Instalar en Android:
-          1. Descarga **eisner.apk**
-          2. Abre el archivo en tu móvil
-          3. Permite "Instalar de fuentes desconocidas" si te lo pide
-          4. ¡Listo!
+          **Instalar:** descarga eisner.apk, ábrelo en tu Android y acepta instalar.
 
-          ### Formatos soportados:
-          CBZ · CBR · RAR · ZIP · PDF
+          **Formatos:** CBZ · CBR · RAR · ZIP · PDF
         files: eisner.apk
-        draft: false
-        prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
