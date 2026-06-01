@@ -2,204 +2,965 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Eisner — Comic Reader</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Eisner">
+<title>Eisner</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg:#0a0a0b; --surface:#111114; --surface2:#18181d; --border:#2a2a32;
-  --accent:#e8c547; --text:#e8e6e0; --text-muted:#5a5a6a;
+  --accent:#e8c547; --text:#e8e6e0; --text-muted:#5a5a6a; --text-dim:#3a3a48;
+  --tr:0.22s cubic-bezier(0.4,0,0.2,1);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow:hidden;touch-action:none;-webkit-tap-highlight-color:transparent}
 
-body {
-  display:flex;flex-direction:column;align-items:center;
-  justify-content:center;min-height:100vh;padding:40px 20px;
-  position:relative;overflow-x:hidden;
-}
-body::before {
-  content:'';position:fixed;inset:0;pointer-events:none;
-  background:
-    radial-gradient(ellipse 70% 50% at 50% 50%,rgba(232,197,71,0.07) 0%,transparent 70%),
-    repeating-linear-gradient(0deg,transparent 39px,rgba(255,255,255,0.015) 40px),
-    repeating-linear-gradient(90deg,transparent 39px,rgba(255,255,255,0.015) 40px);
-}
-
-.container {
-  max-width:560px;width:100%;text-align:center;position:relative;z-index:1;
-}
-
-/* Logo */
-.logo {
-  font-family:'Bebas Neue',sans-serif;
-  font-size:clamp(80px,18vw,140px);
-  letter-spacing:0.04em;line-height:0.9;
-  margin-bottom:8px;
-}
+/* LANDING */
+#landing{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;position:relative;overflow:hidden}
+#landing::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 60% 50% at 50% 60%,rgba(232,197,71,0.07) 0%,transparent 70%),
+  repeating-linear-gradient(0deg,transparent 39px,rgba(255,255,255,0.018) 40px),
+  repeating-linear-gradient(90deg,transparent 39px,rgba(255,255,255,0.018) 40px)}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(72px,14vw,130px);letter-spacing:0.04em;line-height:0.9;text-align:center}
 .logo span{color:var(--accent)}
-.tagline {
-  font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.25em;
-  color:var(--text-muted);text-transform:uppercase;margin-bottom:56px;
+.logo-sub{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.25em;color:var(--text-muted);text-transform:uppercase;margin-top:10px;margin-bottom:48px}
+.open-btn{
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+  width:min(400px,88vw);background:rgba(255,255,255,0.02);
+  border:1.5px dashed var(--border);border-radius:10px;padding:36px 24px;
+  cursor:pointer;transition:all var(--tr);
 }
+.open-btn:hover,.open-btn:active{border-color:var(--accent);background:rgba(232,197,71,0.04);transform:translateY(-2px)}
+.open-icon{width:48px;height:48px;border:1.5px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:border-color var(--tr)}
+.open-btn:hover .open-icon{border-color:var(--accent)}
+.open-title{font-size:15px;font-weight:500}
+.open-hint{font-size:12px;color:var(--text-muted);text-align:center;line-height:1.6}
+.fmt-row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:4px}
+.fmt{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;padding:3px 8px;border:1px solid var(--border);border-radius:3px;color:var(--text-muted)}
+.fmt.new{border-color:rgba(232,197,71,0.4);color:var(--accent)}
+#file-input{display:none}
 
-/* Formats */
-.formats {
-  display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:48px;
-}
-.fmt {
-  font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;
-  padding:5px 12px;border:1px solid var(--border);border-radius:4px;color:var(--text-muted);
-}
-.fmt.hi{border-color:rgba(232,197,71,0.5);color:var(--accent);}
+/* READER */
+#reader{display:none;height:100vh;flex-direction:column}
+#reader.active{display:flex}
 
-/* Download button */
-.dl-btn {
-  display:inline-flex;align-items:center;gap:12px;
-  background:var(--accent);color:#0a0a0b;
-  padding:18px 40px;border-radius:8px;
-  font-family:'DM Sans',sans-serif;font-size:16px;font-weight:700;
-  text-decoration:none;letter-spacing:0.02em;
-  transition:all 0.2s ease;
-  box-shadow:0 8px 32px rgba(232,197,71,0.25);
-  margin-bottom:16px;
-}
-.dl-btn:hover{background:#f0d060;transform:translateY(-2px);box-shadow:0 12px 40px rgba(232,197,71,0.35);}
-.dl-btn:active{transform:translateY(0);}
-.dl-btn svg{flex-shrink:0;}
+/* Topbar */
+#topbar{height:48px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:10px;flex-shrink:0;transition:opacity .3s,transform .3s;z-index:10}
+#topbar.hidden{opacity:0;transform:translateY(-100%);pointer-events:none}
+.tlogo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.06em}
+.tlogo span{color:var(--accent)}
+.tdiv{width:1px;height:20px;background:var(--border)}
+#comic-title{font-size:12px;color:var(--text-muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcounter{font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);white-space:nowrap}
+.pcounter strong{color:var(--text)}
+.ibtn{background:none;border:1px solid transparent;color:var(--text-muted);width:32px;height:32px;min-width:32px;border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--tr)}
+.ibtn:hover{color:var(--text);border-color:var(--border);background:var(--surface2)}
+#guided-badge{display:none;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;color:var(--accent);background:rgba(232,197,71,.1);border:1px solid rgba(232,197,71,.25);padding:4px 10px;border-radius:99px}
+#guided-badge.on{display:flex}
+.bdot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
 
-.dl-hint {
-  font-size:12px;color:var(--text-muted);margin-bottom:48px;line-height:1.6;
-}
-.dl-hint a{color:var(--accent);text-decoration:none;}
+/* Canvas */
+#canvas-area{flex:1;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+#page-container{position:relative;display:flex;align-items:center;justify-content:center;will-change:transform}
+#page-img{display:block;max-height:calc(100vh - 48px - 56px);max-width:100%;object-fit:contain;border-radius:2px;box-shadow:0 8px 60px rgba(0,0,0,.7);transition:opacity .2s;user-select:none;pointer-events:none}
 
-/* Features */
-.features {
-  display:grid;grid-template-columns:1fr 1fr;gap:12px;
-  margin-bottom:48px;text-align:left;
-}
-@media(max-width:400px){.features{grid-template-columns:1fr;}}
-.feat {
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:8px;padding:16px;
-}
-.feat-icon{font-size:20px;margin-bottom:8px;}
-.feat-title{font-size:13px;font-weight:500;margin-bottom:4px;}
-.feat-desc{font-size:11px;color:var(--text-muted);line-height:1.5;}
+/* Touch zones */
+#tz{position:absolute;inset:0;z-index:20;display:grid;grid-template-columns:25% 50% 25%;grid-template-rows:20% 60% 20%}
+.tz{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tz:active{background:rgba(255,255,255,.03)}
+.tz[data-a="prev"]{grid-column:1;grid-row:2}
+.tz[data-a="next"]{grid-column:3;grid-row:2}
+.tz[data-a="menu"]{grid-column:2;grid-row:2}
+.tz[data-a="open"]{grid-column:1/4;grid-row:1}
+.tz[data-a="prog"]{grid-column:1/4;grid-row:3}
 
-/* Install steps */
-.steps {
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:8px;padding:24px;text-align:left;margin-bottom:48px;
-}
-.steps-title{
-  font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.15em;
-  text-transform:uppercase;color:var(--text-muted);margin-bottom:16px;
-}
-.step{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;}
-.step:last-child{margin-bottom:0;}
-.step-num{
-  width:22px;height:22px;min-width:22px;border-radius:50%;
-  background:var(--accent);color:#0a0a0b;
-  font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;
-  margin-top:1px;
-}
-.step-text{font-size:13px;color:var(--text-muted);line-height:1.5;}
-.step-text strong{color:var(--text);}
+/* Tap ripple */
+.ripple{position:absolute;width:60px;height:60px;border-radius:50%;background:rgba(232,197,71,.15);border:1.5px solid rgba(232,197,71,.4);pointer-events:none;transform:translate(-50%,-50%) scale(0);animation:rip .4s ease forwards;z-index:30}
+@keyframes rip{0%{transform:translate(-50%,-50%) scale(0);opacity:1}100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}}
 
-/* Footer */
-footer {
-  font-size:11px;color:var(--text-muted);line-height:1.8;
-}
-footer a{color:var(--text-muted);text-decoration:none;border-bottom:1px solid var(--border);}
-footer a:hover{color:var(--accent);}
-.will{
-  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;
-  color:var(--text-muted);margin-top:24px;opacity:0.5;
-}
+/* Guided overlay */
+#gov{position:absolute;inset:0;pointer-events:none;z-index:10}
+.ph{position:absolute;border:2px solid var(--accent);border-radius:3px;box-shadow:0 0 0 9999px rgba(0,0,0,.55);transition:all .35s cubic-bezier(.4,0,.2,1);opacity:0}
+.ph.on{opacity:1}
+
+/* Bottombar */
+#bottombar{height:56px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 12px;gap:8px;flex-shrink:0;transition:opacity .3s,transform .3s;z-index:10}
+#bottombar.hidden{opacity:0;transform:translateY(100%);pointer-events:none}
+.nbtn{background:var(--surface2);border:1px solid var(--border);color:var(--text);height:36px;padding:0 14px;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:all var(--tr);-webkit-tap-highlight-color:transparent}
+.nbtn:active{background:var(--border)}
+.nbtn:disabled{opacity:.25;pointer-events:none}
+.nbtn.pri{background:var(--accent);border-color:var(--accent);color:#0a0a0b;font-weight:600}
+.nbtn.pri:active{background:#f0d060}
+#ptrack{flex:1;height:4px;background:var(--border);border-radius:99px;overflow:hidden;cursor:pointer;min-width:30px}
+#pfill{height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+
+/* Zone hint */
+#zhint{position:fixed;inset:0;z-index:100;pointer-events:none;display:flex;opacity:0;transition:opacity .5s}
+#zhint.on{opacity:1}
+.zh{display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);text-align:center;line-height:1.5}
+.zh.l{flex:1;background:rgba(232,197,71,.08);border-right:1px solid rgba(232,197,71,.15)}
+.zh.m{flex:2;background:rgba(255,255,255,.02)}
+.zh.r{flex:1;background:rgba(232,197,71,.08);border-left:1px solid rgba(232,197,71,.15)}
+
+/* Loading */
+#loading{display:none;position:fixed;inset:0;background:var(--bg);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+#loading.on{display:flex}
+.lbar{width:220px;height:2px;background:var(--border);border-radius:99px;overflow:hidden}
+.lbar-fill{height:100%;background:var(--accent);border-radius:99px;transition:width .3s;width:0%}
+#ltxt{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.15em;color:var(--text-muted);text-transform:uppercase;text-align:center;max-width:280px;line-height:1.6}
+
+/* Toast */
+#toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 16px;font-size:12px;color:var(--text-muted);opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;z-index:300}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Page anims */
+@keyframes pIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pInB{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+.af{animation:pIn .22s ease forwards}
+.ab{animation:pInB .22s ease forwards}
+
+/* Modal */
+.moverlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px}
+.mbox{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:28px;max-width:400px;width:100%}
+.mtitle{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent);margin-bottom:8px}
+.mbody{color:#a0a0b0;font-size:13px;line-height:1.7;margin-bottom:16px}
+.minfo{background:var(--bg);border-radius:6px;padding:14px;margin-bottom:16px;font-size:12px;color:#a0a0b0;line-height:2.2}
+.mbtn{background:var(--accent);border:none;color:#0a0a0b;padding:10px 24px;border-radius:5px;font-weight:600;cursor:pointer;font-size:13px;width:100%;font-family:'DM Sans',sans-serif}
+
+/* Install banner */
+#install-banner{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 16px;z-index:400;align-items:center;gap:12px}
+#install-banner.on{display:flex}
+#install-banner p{font-size:12px;color:var(--text-muted);flex:1;line-height:1.4}
+#install-banner strong{color:var(--text);display:block;margin-bottom:2px}
+.install-btn{background:var(--accent);border:none;color:#0a0a0b;padding:8px 16px;border-radius:5px;font-weight:600;cursor:pointer;font-size:12px;white-space:nowrap;font-family:'DM Sans',sans-serif}
+.dismiss-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px 8px;font-size:12px}
 </style>
+<!-- Capacitor -->
+<script>
+// Detect if running inside Capacitor (native app) vs browser (PWA)
+window.IS_NATIVE = window.Capacitor !== undefined || 
+                   window.location.href.includes('capacitor://') ||
+                   window.location.href.includes('localhost') && navigator.userAgent.includes('Android');
+</script>
 </head>
 <body>
-<div class="container">
 
+<!-- LANDING -->
+<div id="landing">
   <div class="logo">Eis<span>ner</span></div>
-  <div class="tagline">El lector que Will hubiera querido</div>
-
-  <div class="formats">
-    <span class="fmt hi">CBZ ✓</span>
-    <span class="fmt hi">CBR ✓</span>
-    <span class="fmt hi">RAR ✓</span>
-    <span class="fmt hi">ZIP ✓</span>
-    <span class="fmt hi">PDF ✓</span>
-  </div>
-
-  <a class="dl-btn" id="dl-btn" href="https://github.com/velismo/eisner/releases/latest/download/eisner.apk">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-      <polyline points="7 10 12 15 17 10"/>
-      <line x1="12" y1="15" x2="12" y2="3"/>
-    </svg>
-    Descargar para Android
-  </a>
-
-  <div class="dl-hint">
-    APK gratuito · Sin Play Store · Android 6.0+<br>
-    También disponible en <a href="https://github.com/velismo/eisner/releases" target="_blank">todas las versiones →</a>
-  </div>
-
-  <div class="features">
-    <div class="feat">
-      <div class="feat-icon">📖</div>
-      <div class="feat-title">Guided View</div>
-      <div class="feat-desc">Detección automática de viñetas con visión por computadora</div>
+  <div class="logo-sub">El lector que Will hubiera querido</div>
+  <div class="open-btn" id="open-btn">
+    <div class="open-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+      </svg>
     </div>
-    <div class="feat">
-      <div class="feat-icon">📁</div>
-      <div class="feat-title">Todos los formatos</div>
-      <div class="feat-desc">CBZ, CBR, RAR, ZIP y PDF sin conversiones</div>
-    </div>
-    <div class="feat">
-      <div class="feat-icon">👆</div>
-      <div class="feat-title">Táctil nativo</div>
-      <div class="feat-desc">Zonas de toque, pinch zoom y deslizamiento</div>
-    </div>
-    <div class="feat">
-      <div class="feat-icon">🔓</div>
-      <div class="feat-title">Open source</div>
-      <div class="feat-desc">100% gratuito, sin anuncios, sin rastreo</div>
+    <div class="open-title">Abrir cómic</div>
+    <div class="open-hint">Toca para explorar tus archivos<br>Accede directamente a Descargas</div>
+    <div class="fmt-row">
+      <span class="fmt">CBZ</span>
+      <span class="fmt new">CBR ✓</span>
+      <span class="fmt">ZIP</span>
+      <span class="fmt">PDF</span>
+      <span class="fmt new">RAR ✓</span>
     </div>
   </div>
-
-  <div class="steps">
-    <div class="steps-title">Cómo instalar</div>
-    <div class="step">
-      <div class="step-num">1</div>
-      <div class="step-text">Pulsa <strong>Descargar para Android</strong> y espera a que se descargue el APK</div>
-    </div>
-    <div class="step">
-      <div class="step-num">2</div>
-      <div class="step-text">Abre el archivo descargado desde las notificaciones o la carpeta <strong>Descargas</strong></div>
-    </div>
-    <div class="step">
-      <div class="step-num">3</div>
-      <div class="step-text">Si Android pide permiso para <strong>"instalar apps de fuentes desconocidas"</strong>, acéptalo</div>
-    </div>
-    <div class="step">
-      <div class="step-num">4</div>
-      <div class="step-text">¡Listo! Abre <strong>Eisner</strong> desde tu pantalla de inicio</div>
-    </div>
-  </div>
-
-  <footer>
-    <a href="https://github.com/velismo/eisner" target="_blank">Código fuente en GitHub</a>
-    &nbsp;·&nbsp;
-    <a href="https://github.com/velismo/eisner/releases" target="_blank">Versiones anteriores</a>
-    &nbsp;·&nbsp;
-    <a href="https://github.com/velismo/eisner/issues" target="_blank">Reportar un error</a>
-  </footer>
-
-  <div class="will">En homenaje a Will Eisner (1917–2005)</div>
-
+  <input type="file" id="file-input" accept="*/*" style="display:none">
 </div>
+
+<!-- LOADING -->
+<div id="loading">
+  <div id="ltxt">Cargando...</div>
+  <div class="lbar"><div class="lbar-fill" id="lbar-fill"></div></div>
+</div>
+
+<!-- READER -->
+<div id="reader">
+  <div id="topbar">
+    <div class="tlogo">Eis<span>ner</span></div>
+    <div class="tdiv"></div>
+    <div id="comic-title">—</div>
+    <div class="pcounter"><strong id="pcur">1</strong><span style="color:var(--text-dim)"> / </span><span id="ptot">1</span></div>
+    <div id="guided-badge"><div class="bdot"></div>GUIDED</div>
+    <button class="ibtn" id="btn-close">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+
+  <div id="canvas-area">
+    <div id="page-container">
+      <img id="page-img" src="" alt="" draggable="false">
+      <div id="gov"></div>
+    </div>
+    <div id="tz">
+      <div class="tz" data-a="open"></div>
+      <div class="tz" data-a="prev"></div>
+      <div class="tz" data-a="menu"></div>
+      <div class="tz" data-a="next"></div>
+      <div class="tz" data-a="prog"></div>
+    </div>
+  </div>
+
+  <div id="bottombar">
+    <button class="nbtn" id="btn-prev">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>Ant.
+    </button>
+    <div id="ptrack"><div id="pfill"></div></div>
+    <button class="nbtn pri" id="btn-guided">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>Guided
+    </button>
+    <button class="nbtn" id="btn-next">
+      Sig.<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- Zone hint -->
+<div id="zhint">
+  <div class="zh l">← Anterior</div>
+  <div class="zh m">Centro = menú</div>
+  <div class="zh r">Siguiente →</div>
+</div>
+
+<!-- Install banner -->
+<div id="install-banner">
+  <p><strong>Instalar Eisner</strong>Añade la app a tu pantalla de inicio para acceso rápido y soporte completo de archivos.</p>
+  <button class="install-btn" id="btn-install">Instalar</button>
+  <button class="dismiss-btn" id="btn-dismiss">✕</button>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+'use strict';
+
+// ── PWA REGISTRATION ──────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW:', e));
+  });
+}
+
+// ── INSTALL PROMPT ────────────────────────────────────────
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Show banner after 3s if not in standalone mode
+  if (!window.matchMedia('(display-mode: fullscreen)').matches) {
+    setTimeout(() => document.getElementById('install-banner').classList.add('on'), 3000);
+  }
+});
+document.getElementById('btn-install').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if (outcome === 'accepted') toast('¡Eisner instalado! 🎉');
+  deferredPrompt = null;
+  document.getElementById('install-banner').classList.remove('on');
+});
+document.getElementById('btn-dismiss').addEventListener('click', () => {
+  document.getElementById('install-banner').classList.remove('on');
+});
+
+// ── STATE ─────────────────────────────────────────────────
+const S = {
+  pages:[], current:0, zoom:1,
+  guided:false, gStep:0, gPanels:[],
+  panning:false, panStart:{x:0,y:0}, offset:{x:0,y:0},
+  pinchDist:0, barsOn:true,
+};
+
+// ── ELEMENTS ──────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const landing  = $('landing');
+const readerEl = $('reader');
+const pageImg  = $('page-img');
+const pageCont = $('page-container');
+const canvas   = $('canvas-area');
+const gov      = $('gov');
+
+// ── FILE OPEN ─────────────────────────────────────────────
+$('open-btn').addEventListener('click', openFilePicker);
+
+async function openFilePicker() {
+  // Native Capacitor app: use Android file picker via intent
+  if (window.IS_NATIVE && window.Capacitor?.Plugins?.Filesystem) {
+    try {
+      // Use native Android file chooser
+      const result = await Capacitor.Plugins.FilePicker.pickFiles({
+        types: ['*/*'],
+        multiple: false,
+        readData: true
+      });
+      if (result.files && result.files[0]) {
+        const f = result.files[0];
+        const byteArray = Uint8Array.from(atob(f.data), c => c.charCodeAt(0));
+        const blob = new Blob([byteArray]);
+        const file = new File([blob], f.name, { type: f.mimeType || 'application/octet-stream' });
+        loadFile(file);
+      }
+      return;
+    } catch(e) {
+      if (e.message?.includes('cancel')) return;
+      console.warn('Native picker failed, falling back:', e);
+    }
+  }
+
+  // PWA: File System Access API (no filters = full file manager on Android)
+  if ('showOpenFilePicker' in window) {
+    try {
+      const [fh] = await window.showOpenFilePicker({ multiple: false });
+      const file = await fh.getFile();
+      loadFile(file);
+      return;
+    } catch(e) {
+      if (e.name === 'AbortError') return;
+    }
+  }
+
+  // Fallback: dynamic input, no accept filter
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.style.display = 'none';
+  document.body.appendChild(inp);
+  inp.addEventListener('change', e => {
+    if (e.target.files[0]) loadFile(e.target.files[0]);
+    inp.remove();
+  });
+  inp.click();
+}
+
+async function loadFile(file) {
+  setLoad(true, 'Abriendo archivo...');
+  S.pages.forEach(u => { try{URL.revokeObjectURL(u)}catch(e){} });
+  S.pages = []; S.current = 0;
+  const ext = file.name.split('.').pop().toLowerCase();
+  $('comic-title').textContent = file.name.replace(/\.[^.]+$/,'');
+
+  try {
+    if (ext === 'pdf') {
+      await loadPDF(file);
+    } else if (['cbz','zip'].includes(ext)) {
+      await loadCBZ(file);
+    } else if (['cbr','rar'].includes(ext)) {
+      window._pendingCBRFile = file;
+      await loadCBR(file);
+      window._pendingCBRFile = null;
+    } else {
+      // Unknown extension — check magic bytes first to decide
+      const sniff = await file.slice(0,4).arrayBuffer();
+      const b = new Uint8Array(sniff);
+      const isZip = b[0]===0x50 && b[1]===0x4B;
+      const isRar = b[0]===0x52 && b[1]===0x61 && b[2]===0x72 && b[3]===0x21;
+      if (isRar) await loadCBR(file);
+      else await loadCBZ(file); // try as ZIP (default)
+    }
+
+    if (S.pages.length === 0) throw new Error('No se encontraron imágenes en el archivo');
+    $('ptot').textContent = S.pages.length;
+    setLoad(false);
+    showReader();
+    renderPage(0,'forward');
+    showZoneHint();
+  } catch(err) {
+    setLoad(false);
+    showModal('Error', err.message);
+  }
+}
+
+// ── LOAD CBZ/ZIP ──────────────────────────────────────────
+async function loadCBZ(file) {
+  setLoad(true,'Leyendo ZIP...');
+  let zip;
+  try { zip = await JSZip.loadAsync(file); }
+  catch(e) { throw new Error('ZIP inválido: ' + e.message); }
+
+  const IEXT = ['jpg','jpeg','png','webp','gif','bmp','avif'];
+  const entries = [];
+  zip.forEach((path, entry) => {
+    if (entry.dir || path.includes('__MACOSX') || path.startsWith('.')) return;
+    const fname = path.split('/').pop();
+    if (!fname) return;
+    const ext = fname.split('.').pop().toLowerCase();
+    if (IEXT.includes(ext)) entries.push({path, fname, entry});
+  });
+
+  if (entries.length === 0) {
+    const all = []; zip.forEach((p,e)=>{ if(!e.dir) all.push(p); });
+    throw new Error('Sin imágenes. Contenido: ' + (all.slice(0,4).join(', ')||'vacío'));
+  }
+
+  entries.sort((a,b) => {
+    const na = (a.fname.match(/\d+/)||[''])[0];
+    const nb = (b.fname.match(/\d+/)||[''])[0];
+    if (na && nb && na!==nb) return parseInt(na)-parseInt(nb);
+    return a.fname.localeCompare(b.fname,undefined,{numeric:true});
+  });
+
+  for (let i=0; i<entries.length; i++) {
+    setLoad(true, `Cargando ${i+1} de ${entries.length}`, (i/entries.length)*100);
+    try {
+      const buf = await entries[i].entry.async('arraybuffer');
+      const ext = entries[i].fname.split('.').pop().toLowerCase();
+      const mime = ext==='png'?'image/png':ext==='webp'?'image/webp':ext==='gif'?'image/gif':'image/jpeg';
+      S.pages.push(URL.createObjectURL(new Blob([buf],{type:mime})));
+    } catch(e) { console.warn('Skip',entries[i].fname); }
+  }
+}
+
+// ── LOAD CBR/RAR ──────────────────────────────────────────
+async function loadCBR(file) {
+  setLoad(true, 'Analizando formato...');
+  
+  // Read first 8 bytes to detect real format
+  const sniff = await file.slice(0, 8).arrayBuffer();
+  const bytes = new Uint8Array(sniff);
+
+  const isZip  = bytes[0]===0x50 && bytes[1]===0x4B;
+  const isRar4 = bytes[0]===0x52 && bytes[1]===0x61 && bytes[2]===0x72 && bytes[3]===0x21 && bytes[4]===0x1A && bytes[5]===0x07 && bytes[6]===0x00;
+  const isRar5 = bytes[0]===0x52 && bytes[1]===0x61 && bytes[2]===0x72 && bytes[3]===0x21 && bytes[4]===0x1A && bytes[5]===0x07 && bytes[6]===0x01;
+  const isRar  = isRar4 || isRar5;
+
+  console.log(`CBR format detection: ZIP=${isZip} RAR4=${isRar4} RAR5=${isRar5}`);
+
+  // Strategy 1: ZIP in disguise — open directly with JSZip
+  if (isZip) {
+    setLoad(true, 'CBR es ZIP por dentro — abriendo...');
+    try {
+      const fakeFile = new File([await file.arrayBuffer()], 
+        file.name.replace(/\.(cbr|rar)$/i, '.cbz'), { type:'application/zip' });
+      await loadCBZ(fakeFile);
+      if (S.pages.length > 0) { toast('✓ Abierto correctamente'); return; }
+    } catch(e) { console.warn('ZIP attempt failed:', e.message); }
+  }
+
+  // Strategy 2: Real RAR — try unrar engine from CDN
+  if (isRar) {
+    setLoad(true, 'RAR auténtico — cargando motor...');
+    const buf = await file.arrayBuffer();
+    const success = await tryUnrarSources(buf);
+    if (success) return;
+  }
+
+  // Strategy 3: Unknown — try ZIP anyway as last resort
+  if (!isZip && !isRar) {
+    setLoad(true, 'Probando como ZIP...');
+    try {
+      const buf = await file.arrayBuffer();
+      const fakeFile = new File([buf], file.name + '.zip', { type:'application/zip' });
+      await loadCBZ(fakeFile);
+      if (S.pages.length > 0) { toast('✓ Abierto'); return; }
+    } catch(e) { console.warn('Last resort ZIP failed:', e.message); }
+  }
+
+  // All strategies failed
+  setLoad(false);
+  showCBRDiag(isZip, isRar, file.name);
+}
+
+// Native RAR bridge — called from web/index.html
+// Uses the Java RarPlugin when running inside Capacitor APK
+
+async function loadCBRNative(file) {
+  // Save file to app cache dir first, then pass path to native plugin
+  const { Filesystem, Capacitor } = window;
+  
+  if (!Capacitor?.isNativePlatform()) {
+    return false; // Not in native app, skip
+  }
+
+  try {
+    // Write file to cache
+    const buf = await file.arrayBuffer();
+    const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+    
+    const writeResult = await Filesystem.writeFile({
+      path: 'temp_comic.cbr',
+      data: b64,
+      directory: 'CACHE',
+    });
+
+    // Call native RAR extractor
+    const { RarPlugin } = Capacitor.Plugins;
+    if (!RarPlugin) throw new Error('RarPlugin not available');
+
+    const result = await RarPlugin.extractImages({ 
+      path: writeResult.uri.replace('file://', '') 
+    });
+
+    if (!result.pages || result.pages.length === 0) {
+      throw new Error('No images found in RAR');
+    }
+
+    // Convert base64 pages to blob URLs
+    for (const page of result.pages) {
+      const binary = atob(page.data);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: page.mime });
+      S.pages.push(URL.createObjectURL(blob));
+    }
+
+    // Clean up temp file
+    await Filesystem.deleteFile({ path: 'temp_comic.cbr', directory: 'CACHE' });
+
+    return true;
+  } catch (e) {
+    console.error('Native RAR failed:', e);
+    return false;
+  }
+}
+
+
+async function tryUnrarSources(buf) {
+  // 1. Try native Capacitor plugin (inside APK — no CDN needed)
+  if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+    try {
+      const { RarPlugin, Filesystem } = window.Capacitor.Plugins;
+      if (RarPlugin) {
+        setLoad(true, 'Extrayendo RAR nativo...');
+
+        // Write file to cache dir
+        const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+        const written = await Filesystem.writeFile({
+          path: 'eisner_temp.cbr',
+          data: b64,
+          directory: 'CACHE'
+        });
+
+        // Call native Java extractor
+        const filePath = written.uri.replace('file://', '');
+        const result = await RarPlugin.extractImages({ path: filePath });
+
+        // Clean up
+        await Filesystem.deleteFile({ path: 'eisner_temp.cbr', directory: 'CACHE' }).catch(()=>{});
+
+        if (result && result.pages && result.pages.length > 0) {
+          for (const page of result.pages) {
+            const binary = atob(page.data);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            const blob = new Blob([bytes], { type: page.mime || 'image/jpeg' });
+            S.pages.push(URL.createObjectURL(blob));
+          }
+          toast('✓ CBR abierto con motor nativo');
+          return true;
+        }
+      }
+    } catch(e) {
+      console.warn('Native RAR plugin failed:', e.message);
+    }
+  }
+
+  // 2. CDN fallback (browser/PWA only)
+  const sources = [
+    'https://cdn.jsdelivr.net/npm/node-unrar-js@2.0.1/esm/js/unrar.bundle.js',
+    'https://unpkg.com/node-unrar-js@2.0.1/esm/js/unrar.bundle.js',
+  ];
+
+  for (const src of sources) {
+    if (!window.createExtractorFromData) {
+      try {
+        setLoad(true, 'Cargando motor RAR...');
+        await loadScriptTimeout(src, 8000);
+      } catch(e) {
+        console.warn('CDN failed:', src, e.message);
+        continue;
+      }
+    }
+
+    if (!window.createExtractorFromData) continue;
+
+    try {
+      setLoad(true, 'Extrayendo RAR...');
+      const extractor = await window.createExtractorFromData({ data: buf });
+      const list = extractor.getFileList();
+      const fileHeaders = [...list.fileHeaders];
+      const IEXT = ['jpg','jpeg','png','webp','gif','bmp'];
+      const imgs = fileHeaders.filter(h => {
+        const ext = h.name.split('.').pop().toLowerCase();
+        return IEXT.includes(ext) && !h.flags.directory;
+      });
+      imgs.sort((a,b) => {
+        const na = (a.name.match(/\d+/)||[''])[0];
+        const nb = (b.name.match(/\d+/)||[''])[0];
+        if (na&&nb) return parseInt(na)-parseInt(nb);
+        return a.name.localeCompare(b.name,undefined,{numeric:true});
+      });
+      const extracted = extractor.extract({ files: imgs.map(h=>h.name) });
+      for (const f of extracted.files) {
+        if (f.extraction) {
+          const ext = f.fileHeader.name.split('.').pop().toLowerCase();
+          const mime = ext==='png'?'image/png':ext==='webp'?'image/webp':'image/jpeg';
+          S.pages.push(URL.createObjectURL(new Blob([f.extraction.fileData],{type:mime})));
+        }
+      }
+      if (S.pages.length > 0) { toast('✓ CBR abierto'); return true; }
+    } catch(e) {
+      console.warn('unrar extract failed:', e.message);
+    }
+  }
+  return false;
+}
+
+
+async function loadPDF(file) {
+  setLoad(true,'Cargando PDF...');
+  if (!window.pdfjsLib) {
+    await loadScriptTimeout('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', 10000);
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+  const buf = await file.arrayBuffer();
+  const pdf = await window.pdfjsLib.getDocument({data:buf}).promise;
+  for (let i=1; i<=pdf.numPages; i++) {
+    setLoad(true,`Renderizando ${i} de ${pdf.numPages}`,(i/pdf.numPages)*100);
+    const page = await pdf.getPage(i);
+    const vp = page.getViewport({scale:2.0});
+    const cv = document.createElement('canvas');
+    cv.width=vp.width; cv.height=vp.height;
+    await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+    S.pages.push(cv.toDataURL('image/jpeg',0.92));
+  }
+}
+
+
+
+// ── RENDER PAGE ───────────────────────────────────────────
+function renderPage(index, dir='forward') {
+  if (index<0||index>=S.pages.length) return;
+  S.current=index; S.offset={x:0,y:0}; S.zoom=1; applyT(false);
+
+  pageImg.style.opacity='0';
+  pageImg.onload=()=>{
+    pageImg.style.opacity='1';
+    pageImg.classList.remove('af','ab');
+    void pageImg.offsetWidth;
+    pageImg.classList.add(dir==='forward'?'af':'ab');
+    if(S.guided) startGuided();
+  };
+  pageImg.onerror=()=>{ pageImg.style.opacity='0.3'; toast('Error en página '+(index+1)); };
+  pageImg.src = S.pages[index];
+
+  $('pcur').textContent = index+1;
+  const pct = S.pages.length>1 ? (index/(S.pages.length-1))*100 : 100;
+  $('pfill').style.width = pct+'%';
+  $('btn-prev').disabled = index===0;
+  $('btn-next').disabled = index===S.pages.length-1;
+}
+
+function goNext() { if(S.guided){advG();return;} if(S.current<S.pages.length-1) renderPage(S.current+1,'forward'); }
+function goPrev() {
+  if(S.guided&&S.gStep>0){S.gStep--;renderGStep();return;}
+  if(S.current>0) renderPage(S.current-1,'back');
+}
+
+// ── TOUCH ZONES ───────────────────────────────────────────
+document.querySelectorAll('.tz').forEach(z => {
+  z.addEventListener('click', e => {
+    ripple(e.clientX, e.clientY);
+    const a = z.dataset.a;
+    if      (a==='next') goNext();
+    else if (a==='prev') goPrev();
+    else if (a==='menu') toggleBars();
+    else if (a==='open') openFilePicker();
+    else if (a==='prog') showBarsTemp();
+  });
+});
+
+function ripple(x,y) {
+  const el=document.createElement('div'); el.className='ripple';
+  el.style.left=x+'px'; el.style.top=y+'px';
+  canvas.appendChild(el); setTimeout(()=>el.remove(),500);
+}
+function toggleBars() {
+  S.barsOn=!S.barsOn;
+  $('topbar').classList.toggle('hidden',!S.barsOn);
+  $('bottombar').classList.toggle('hidden',!S.barsOn);
+}
+function showBarsTemp() {
+  $('topbar').classList.remove('hidden');
+  $('bottombar').classList.remove('hidden');
+  if (!S.barsOn) setTimeout(()=>{ $('topbar').classList.add('hidden'); $('bottombar').classList.add('hidden'); },3000);
+}
+
+// ── BOTTOM BAR ────────────────────────────────────────────
+$('btn-prev').addEventListener('click', goPrev);
+$('btn-next').addEventListener('click', goNext);
+$('btn-guided').addEventListener('click', toggleGuided);
+$('btn-close').addEventListener('click', closeReader);
+$('ptrack').addEventListener('click', e => {
+  const r=e.currentTarget.getBoundingClientRect();
+  renderPage(Math.round(((e.clientX-r.left)/r.width)*(S.pages.length-1)),'forward');
+});
+
+function closeReader() {
+  S.pages.forEach(u=>{try{URL.revokeObjectURL(u)}catch(e){}});
+  S.pages=[];
+  readerEl.classList.remove('active');
+  landing.style.display='flex';
+  $('file-input').value='';
+  resetGuided();
+}
+
+// ── ZOOM & PAN ────────────────────────────────────────────
+canvas.addEventListener('wheel',e=>{e.preventDefault();setZoom(S.zoom*(e.deltaY<0?1.1:0.9));},{passive:false});
+
+let mpan=false, mpStart={x:0,y:0};
+canvas.addEventListener('mousedown',e=>{if(e.button!==0)return;mpan=true;mpStart={x:e.clientX-S.offset.x,y:e.clientY-S.offset.y};canvas.style.cursor='grabbing';});
+window.addEventListener('mousemove',e=>{if(!mpan)return;S.offset.x=e.clientX-mpStart.x;S.offset.y=e.clientY-mpStart.y;applyT(false);});
+window.addEventListener('mouseup',()=>{mpan=false;canvas.style.cursor='';});
+
+let touches=[], pinchZ=1, swX=0, swY=0, swMoved=false;
+let lastTap=0, lastTapX=0, lastTapY=0;
+
+canvas.addEventListener('touchstart',e=>{
+  touches=Array.from(e.touches);
+  if(touches.length===2){
+    pinchZ=S.zoom;
+    S.pinchDist=Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);
+  } else if(touches.length===1){
+    swX=touches[0].clientX; swY=touches[0].clientY; swMoved=false;
+  }
+},{passive:true});
+
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  const ts=Array.from(e.touches);
+  if(ts.length===2&&S.pinchDist>0){
+    const d=Math.hypot(ts[0].clientX-ts[1].clientX,ts[0].clientY-ts[1].clientY);
+    setZoom(pinchZ*d/S.pinchDist);
+  } else if(ts.length===1&&S.zoom>1.05){
+    S.offset.x+=ts[0].clientX-swX; S.offset.y+=ts[0].clientY-swY;
+    swX=ts[0].clientX; swY=ts[0].clientY;
+    applyT(false); swMoved=true;
+  }
+},{passive:false});
+
+canvas.addEventListener('touchend',e=>{
+  const t=e.changedTouches[0];
+  const now=Date.now();
+  const dt=now-lastTap;
+  const dd=Math.hypot(t.clientX-lastTapX,t.clientY-lastTapY);
+
+  if(dt<300&&dd<30&&e.changedTouches.length===1){
+    // Double tap
+    e.preventDefault();
+    if(S.zoom>1.05){ S.zoom=1;S.offset={x:0,y:0};applyT(); }
+    else {
+      const tz=2.5;
+      S.offset.x=-(t.clientX-window.innerWidth/2)*(tz-1);
+      S.offset.y=-(t.clientY-window.innerHeight/2)*(tz-1);
+      setZoom(tz);
+    }
+    lastTap=0; return;
+  }
+  lastTap=now; lastTapX=t.clientX; lastTapY=t.clientY;
+
+  if(!swMoved&&S.zoom<1.05&&e.changedTouches.length===1){
+    const dx=t.clientX-swX, dy=t.clientY-swY;
+    if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.5){ if(dx<0)goNext();else goPrev(); }
+  }
+  touches=[]; S.pinchDist=0;
+},{passive:false});
+
+function setZoom(z){ S.zoom=Math.max(0.3,Math.min(5,z)); applyT(); }
+function applyT(anim=true){
+  pageCont.style.transition=anim?'transform .18s ease':'none';
+  pageCont.style.transform=`translate(${S.offset.x}px,${S.offset.y}px) scale(${S.zoom})`;
+}
+
+// ── GUIDED VIEW ─────────────────────────────────────────────
+function toggleGuided(){
+  S.guided=!S.guided;
+  $('guided-badge').classList.toggle('on',S.guided);
+  $('btn-guided').innerHTML=S.guided
+    ?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Pausa'
+    :'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Guided';
+  if(S.guided){startGuided();}
+  else resetGuided();
+}
+
+async function startGuided(){
+  if(!pageImg.naturalWidth){pageImg.addEventListener('load',()=>startGuided(),{once:true});return;}
+  toast('Analizando página...');
+  try { S.gPanels = await detectPanels(pageImg); }
+  catch(e){ console.warn('Detection failed:',e); S.gPanels=fallbackPanels(pageImg.naturalWidth,pageImg.naturalHeight); }
+  S.gStep=0;
+  const msg = S.gPanels[0]?.splash ? '1 splash page' : S.gPanels.length+' viñetas detectadas';
+  toast('✓ '+msg+' — toca derecha para avanzar');
+  renderGStep();
+}
+
+// ── PANEL DETECTOR — Computer Vision (offline) ────────────
+// 1. Render image to offscreen canvas at 800px width
+// 2. Build grayscale map
+// 3. Scan rows/cols for lines that are mostly dark or white (= borders/gutters)
+// 4. Cluster nearby lines → separator positions
+// 5. Build panel grid, sort in reading order
+
+async function detectPanels(imgEl){
+  const W=800;
+  const H=Math.round(imgEl.naturalHeight*(W/imgEl.naturalWidth));
+  const cv=document.createElement('canvas');
+  cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d');
+  ctx.drawImage(imgEl,0,0,W,H);
+  const px=ctx.getImageData(0,0,W,H).data;
+
+  // Grayscale
+  const g=new Uint8Array(W*H);
+  for(let i=0;i<W*H;i++){
+    g[i]=Math.round(0.299*px[i*4]+0.587*px[i*4+1]+0.114*px[i*4+2]);
+  }
+
+  // Splash detection: very few dark pixels = full-bleed art
+  let dark=0;
+  for(let i=0;i<g.length;i++) if(g[i]<60) dark++;
+  if(dark/g.length < 0.015) return [{x:0,y:0,w:1,h:1,splash:true}];
+
+  const hSegs=findSeps(g,W,H,'h');
+  const vSegs=findSeps(g,W,H,'v');
+  const panels=buildPanels(hSegs,vSegs);
+
+  if(panels.length<2||panels.length>24) return fallbackPanels(imgEl.naturalWidth,imgEl.naturalHeight);
+  return panels;
+}
+
+function findSeps(g,W,H,dir){
+  const DARK=80, LIGHT=230, MIN_RATIO=0.52, MARGIN=0.04, PAD_S=Math.round((dir==='h'?H:W)*MARGIN), PAD_E=(dir==='h'?H:W)-PAD_S;
+  const hits=[];
+  if(dir==='h'){
+    for(let y=PAD_S;y<PAD_E;y++){
+      let n=0; for(let x=0;x<W;x++){const v=g[y*W+x]; if(v<DARK||v>LIGHT)n++;} 
+      if(n/W>MIN_RATIO) hits.push(y/H);
+    }
+  } else {
+    for(let x=PAD_S;x<PAD_E;x++){
+      let n=0; for(let y=0;y<H;y++){const v=g[y*W+x]; if(v<DARK||v>LIGHT)n++;}
+      if(n/H>MIN_RATIO) hits.push(x/W);
+    }
+  }
+  return cluster(hits,0.02);
+}
+
+function cluster(pts,gap){
+  if(!pts.length) return [0,1];
+  pts=pts.slice().sort((a,b)=>a-b);
+  const out=[]; let grp=[pts[0]];
+  for(let i=1;i<pts.length;i++){
+    if(pts[i]-pts[i-1]<gap) grp.push(pts[i]);
+    else{ out.push(grp.reduce((a,b)=>a+b,0)/grp.length); grp=[pts[i]]; }
+  }
+  out.push(grp.reduce((a,b)=>a+b,0)/grp.length);
+  const r=[];
+  if(out[0]>0.04) r.push(0);
+  r.push(...out);
+  if(out[out.length-1]<0.96) r.push(1);
+  return r;
+}
+
+function buildPanels(hs,vs){
+  const p=[], PAD=0.005;
+  for(let r=0;r<hs.length-1;r++){
+    for(let c=0;c<vs.length-1;c++){
+      const x=vs[c]+PAD, y=hs[r]+PAD;
+      const w=vs[c+1]-vs[c]-PAD*2, h=hs[r+1]-hs[r]-PAD*2;
+      if(w<0.05||h<0.04) continue;
+      p.push({x,y,w,h,splash:false});
+    }
+  }
+  return p;
+}
+
+function fallbackPanels(w,h){
+  if(w/h>0.85) return [{x:0,y:0,w:1,h:1,splash:true}];
+  return [
+    {x:.02,y:.02,w:.96,h:.29,splash:false},
+    {x:.02,y:.34,w:.46,h:.29,splash:false},
+    {x:.52,y:.34,w:.46,h:.29,splash:false},
+    {x:.02,y:.67,w:.30,h:.29,splash:false},
+    {x:.35,y:.67,w:.30,h:.29,splash:false},
+    {x:.68,y:.67,w:.30,h:.29,splash:false},
+  ];
+}
+
+function advG(){
+  if(S.gStep<S.gPanels.length-1){S.gStep++;renderGStep();}
+  else if(S.current<S.pages.length-1){renderPage(S.current+1,'forward');setTimeout(startGuided,350);}
+  else toast('¡Fin del cómic!');
+}
+
+function resetGuided(){
+  S.gPanels=[];S.gStep=0;gov.innerHTML='';S.zoom=1;S.offset={x:0,y:0};applyT();
+  $('guided-badge').classList.remove('on');
+  $('btn-guided').innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Guided';
+}
+
+// ── KEYBOARD ──────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(!readerEl.classList.contains('active'))return;
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();goNext();}
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();goPrev();}
+  if(e.key==='g'||e.key==='G') toggleGuided();
+  if(e.key==='f'||e.key==='F'){S.zoom=1;S.offset={x:0,y:0};applyT();}
+  if(e.key==='+'||e.key==='=') setZoom(S.zoom*1.2);
+  if(e.key==='-') setZoom(S.zoom/1.2);
+  if(e.key==='Escape'&&S.guided) toggleGuided();
+});
+
+// ── UI HELPERS ────────────────────────────────────────────
+function showReader(){
+  landing.style.display='none';
+  readerEl.classList.add('active');
+  S.barsOn=true;
+  $('topbar').classList.remove('hidden');
+  $('bottombar').classList.remove('hidden');
+}
+function setLoad(v,msg='Cargando...',pct=null){
+  $('loading').classList.toggle('on',v);
+  $('ltxt').textContent=msg;
+  $('lbar-fill').style.width=(pct!==null?pct:0)+'%';
+}
+function showZoneHint(){
+  if(localStorage.getItem('e-hint'))return;
+  const h=$('zhint'); h.classList.add('on');
+  setTimeout(()=>{ h.classList.remove('on'); localStorage.setItem('e-hint','1'); },2500);
+}
+let toastT;
+function toast(msg){
+  const t=$('toast'); t.textContent=msg; t.classList.add('on');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('on'),2800);
+}
+function showModal(title,body){
+  const el=document.createElement('div'); el.className='moverlay';
+  el.innerHTML=`<div class="mbox"><div class="mtitle">${title}</div><div class="mbody">${body}</div><button class="mbtn" onclick="this.closest('.moverlay').remove()">Cerrar</button></div>`;
+  document.body.appendChild(el);
+}
+function showCBRModal(fname){
+  const el=document.createElement('div'); el.className='moverlay';
+  el.innerHTML=`
+    <div class="mbox">
+      <div class="mtitle">CBR / RAR</div>
+      <div class="mbody">El motor RAR no pudo cargarse (sin conexión). Convierte el archivo a CBZ:</div>
+      <div class="minfo">
+        💡 <strong style="color:#e8e6e0">Truco:</strong> Renombra .cbr → .zip e inténtalo<br>
+        🌐 <strong style="color:#e8e6e0">Online:</strong> cloudconvert.com → CBR a CBZ<br>
+        🖥️ <strong style="color:#e8e6e0">Windows:</strong> 7-Zip → extraer → comprimir ZIP
+      </div>
+      <button class="mbtn" onclick="this.closest('.moverlay').remove()">Entendido</button>
+    </div>`;
+  document.body.appendChild(el);
+}
+</script>
 </body>
 </html>
