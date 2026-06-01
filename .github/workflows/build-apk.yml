@@ -10,34 +10,42 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-    - uses: actions/checkout@v4
-
-    - uses: actions/setup-node@v4
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: "20"
 
-    - run: npm install
+    - name: Install dependencies
+      run: npm install
 
-    - uses: actions/setup-java@v4
+    - name: Set up Java 17
+      uses: actions/setup-java@v4
       with:
-        java-version: '17'
+        java-version: "17"
         distribution: temurin
 
-    - uses: android-actions/setup-android@v3
+    - name: Set up Android SDK
+      uses: android-actions/setup-android@v3
 
-    - run: npx cap add android
+    - name: Add Android platform
+      run: npx cap add android
 
-    - run: npx cap sync android
+    - name: Sync web assets
+      run: npx cap sync android
 
     - name: Fix Gradle and config
       run: |
-        sed -i 's/gradle-8\.0\.[0-9]-all/gradle-8.2-all/g' android/gradle/wrapper/gradle-wrapper.properties
-        sed -i 's/gradle-8\.1\.[0-9]-all/gradle-8.2-all/g' android/gradle/wrapper/gradle-wrapper.properties
+        sed -i "s/gradle-8\.0\.[0-9]-all/gradle-8.2-all/g" android/gradle/wrapper/gradle-wrapper.properties
+        sed -i "s/gradle-8\.1\.[0-9]-all/gradle-8.2-all/g" android/gradle/wrapper/gradle-wrapper.properties
         sed -i 's|<string name="app_name">.*</string>|<string name="app_name">Eisner</string>|' android/app/src/main/res/values/strings.xml
-        echo "dependencies { implementation \"com.github.junrar:junrar:7.5.5\" }" >> android/app/build.gradle
-        sed -i '/mavenCentral()/a\        maven { url "https://jitpack.io" }' android/build.gradle || true
+        echo >> android/app/build.gradle
+        echo 'dependencies { implementation "com.github.junrar:junrar:7.5.5" }' >> android/app/build.gradle
+        grep -q "jitpack" android/build.gradle || sed -i "/mavenCentral()/a\        maven { url \"https://jitpack.io\" }" android/build.gradle
 
     - name: Inject icons
       run: |
@@ -57,33 +65,108 @@ jobs:
         echo "iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAACnklEQVR42u3cwY2EMBQFQZ8hMCInF7KAJJCR6XpSJ4B/7W12DDMzMzMzMzMzMzMzMzMzMzMzs0nbtv3WmrleBy8gHL1gcPSCwfErjcBDKwnBwyoLwWMqi8AjKovA4ymLwKMpi8BjKYvAIymLwOMoi8CjKI3AgygLwGMojcBDKAvAIyiLwMdXGoEPLwCkIgAfXWkEPrgAkIoAfGylEfjQAkACQIoB8JGVRuADCwAJAAkACYCvu85DHwUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMB+AfzHi36IAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABAIAAAEAAACAA/CSy9zNFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADA0QMAgAAAwCEJAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBMAAAgAP4nUQn8kABAAAAgAAAQAAAIAAAEAgAAAQAAAIAAAEAAACAAABAAAAgAAAQCAAABAAAAgAAAQAAAIAAAEAAACAAABIAEgASABIAEg/RoABEofPwACwIcWAFIUAARKHz8AAsAHVxkABEofPwACwIdXGQAESh8/BMofPwDKA4BA6eMHQHkAECh9/BAof/wQKH/8ECh//BAof/wQKH/8ECh//BAof/wgKH/4IMjhQyDHD4McPQyO3oBw8GZmZmZmZmZmZmZmZmZmZmb22h6te/m6QnsQVwAAAABJRU5ErkJggg==" | base64 -d > android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
         cp android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
 
-    - name: Copy RAR plugin
+    - name: Add RAR plugin
       run: |
         mkdir -p android/app/src/main/java/com/velismo/eisner/plugins
-        cp plugins/RarPlugin.java android/app/src/main/java/com/velismo/eisner/plugins/
-        MAIN=$(find android/app/src/main/java -name 'MainActivity.java' | head -1)
-        grep -q 'RarPlugin' "$MAIN" || sed -i 's/import com.getcapacitor.BridgeActivity;/import com.getcapacitor.BridgeActivity;\nimport com.velismo.eisner.plugins.RarPlugin;/' "$MAIN"
-        grep -q 'registerPlugin' "$MAIN" || sed -i 's/public class MainActivity extends BridgeActivity {/public class MainActivity extends BridgeActivity {\n  @Override public void onCreate(android.os.Bundle b) { registerPlugin(RarPlugin.class); super.onCreate(b); }/' "$MAIN"
-        cat "$MAIN"
+        python3 << 'PY'
+content = open("android/app/src/main/java/com/velismo/eisner/plugins/RarPlugin.java","w")
+content.write("""package com.velismo.eisner.plugins;
+import android.util.Base64;
+import com.getcapacitor.JSArray;
+import com.getcapacitor.JSObject;
+import com.getcapacitor.Plugin;
+import com.getcapacitor.PluginCall;
+import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.CapacitorPlugin;
+import com.github.junrar.Archive;
+import com.github.junrar.rarfile.FileHeader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
+@CapacitorPlugin(name = "RarPlugin")
+public class RarPlugin extends Plugin {
+    private static final List<String> IMG = Arrays.asList("jpg","jpeg","png","webp","gif","bmp");
+    @PluginMethod
+    public void extractImages(PluginCall call) {
+        String p = call.getString("path");
+        if (p == null) { call.reject("No path"); return; }
+        try {
+            Archive a = new Archive(new File(p));
+            List<FileHeader> all = a.getFileHeaders();
+            List<FileHeader> imgs = new ArrayList<>();
+            for (FileHeader h : all) {
+                if (!h.isDirectory()) {
+                    String n = h.getFileName().toLowerCase();
+                    String e = n.contains(".") ? n.substring(n.lastIndexOf(".")+1) : "";
+                    if (IMG.contains(e)) imgs.add(h);
+                }
+            }
+            imgs.sort((x,y) -> {
+                String nx = x.getFileName().replaceAll("[^0-9]","");
+                String ny = y.getFileName().replaceAll("[^0-9]","");
+                if (!nx.isEmpty() && !ny.isEmpty()) try { return Integer.parseInt(nx)-Integer.parseInt(ny); } catch(Exception ex){}
+                return x.getFileName().compareTo(y.getFileName());
+            });
+            JSArray pages = new JSArray();
+            for (FileHeader h : imgs) {
+                ByteArrayOutputStream b = new ByteArrayOutputStream();
+                a.extractFile(h, b);
+                String b64 = Base64.encodeToString(b.toByteArray(), Base64.NO_WRAP);
+                String n = h.getFileName();
+                String e = n.contains(".") ? n.substring(n.lastIndexOf(".")+1).toLowerCase() : "jpg";
+                String mime = e.equals("png") ? "image/png" : e.equals("webp") ? "image/webp" : "image/jpeg";
+                JSObject pg = new JSObject();
+                pg.put("name", n); pg.put("data", b64); pg.put("mime", mime);
+                pages.put(pg);
+            }
+            a.close();
+            JSObject r = new JSObject();
+            r.put("pages", pages); r.put("count", imgs.size());
+            call.resolve(r);
+        } catch (Exception e) { call.reject("RAR: " + e.getMessage()); }
+    }
+}
+""")
+content.close()
+PY
+        MAIN=$(find android/app/src/main/java -name "MainActivity.java" | head -1)
+        python3 << 'PY2'
+import sys
+path = open("/tmp/mainpath").read().strip()
+c = open(path).read()
+if "RarPlugin" not in c:
+    c = c.replace("import com.getcapacitor.BridgeActivity;",
+        "import com.getcapacitor.BridgeActivity;\nimport com.velismo.eisner.plugins.RarPlugin;")
+    c = c.replace("public class MainActivity extends BridgeActivity {",
+        "public class MainActivity extends BridgeActivity {\n  @Override\n  public void onCreate(android.os.Bundle b){registerPlugin(RarPlugin.class);super.onCreate(b);}")
+    open(path,"w").write(c)
+    print("Registered")
+PY2
 
-    - run: chmod +x android/gradlew
+    - name: Make gradlew executable
+      run: chmod +x android/gradlew
 
     - name: Build APK
       run: cd android && ./gradlew assembleDebug
 
-    - run: cp android/app/build/outputs/apk/debug/app-debug.apk eisner.apk
+    - name: Rename APK
+      run: cp android/app/build/outputs/apk/debug/app-debug.apk eisner.apk
 
-    - uses: actions/upload-artifact@v4
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
       with:
         name: eisner
         path: eisner.apk
         retention-days: 90
 
-    - uses: softprops/action-gh-release@v1
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
       with:
         tag_name: v${{ github.run_number }}
         name: Eisner v${{ github.run_number }}
-        body: Descarga eisner.apk e instala en Android. Soporta CBZ, CBR, RAR, ZIP y PDF.
+        body: Descarga eisner.apk e instala en Android. Soporta CBZ CBR RAR ZIP PDF.
         files: eisner.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
